@@ -12,7 +12,7 @@ export default function ResultsPage() {
 
   const [forecast, setForecast] = useState([]);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchData() {
