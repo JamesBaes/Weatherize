@@ -1,18 +1,17 @@
-export async function getWeatherData(city: string, apiKey: string) {
-    // Get coordinates
-    const geoRes = await fetch(
-      `https://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${apiKey}`
-    );
-    const geoData = await geoRes.json();
-    if (!geoData.length) throw new Error('City not found');
+export async function getWeatherData(cityQuery, apiKey) {
+    const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(cityQuery)}&days=7&aqi=no&alerts=no`;
   
-    const { lat, lon } = geoData[0];
+    const res = await fetch(url);
+    const data = await res.json();
   
-    // Get weather
-    const weatherRes = await fetch(
-      `https://api.openweathermap.org/data/3.0/onecall?lat=${lat}&lon=${lon}&exclude=minutely,hourly,alerts&units=metric&appid=${apiKey}`
-    );
-    const weatherData = await weatherRes.json();
-    return { city: geoData[0].name, data: weatherData.daily.slice(0, 7) }; // first 7 days
-}
+    if (!res.ok || !data || !data.forecast) {
+      console.error("Invalid weather response:", data);
+      throw new Error(data.error?.message || "Weather data unavailable");
+    }
+  
+    return {
+      city: data.location.name + ", " + data.location.country,
+      data: data.forecast.forecastday, // array of 7 days
+    };
+  }
   
