@@ -1,23 +1,91 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import ForecastCard from "../app/components/ForecastCard";
+import { getWeatherData } from "../app/utils/fetchWeather";
 import { headerFont } from "./layout.js";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 export default function Home() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [randomCity, setRandomCity] = useState(null);
+  const [forecast, setForecast] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [backgroundColor, setBackgroundColor] = useState("");
+
+  const cities = [
+    "Tokyo",
+    "Delhi",
+    "Shanghai",
+    "São Paulo",
+    "Mexico City",
+  ];
+
+  const getRandomCity = () => {
+    const randomCityName = cities[Math.floor(Math.random() * cities.length)];
+    setRandomCity(randomCityName);
+  };
+
+  useEffect(() => {
+    if (randomCity) {
+      const fetchWeather = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const result = await getWeatherData(randomCity, process.env.NEXT_PUBLIC_WEATHER_API_KEY);
+          setForecast(result.data);
+
+          const currentWeatherCondition = result.data[0].day.condition.text.toLowerCase();
+          setBackgroundColor(getBackgroundColorForWeather(currentWeatherCondition));
+
+        } catch (err) {
+          setError(err.message || "Something went wrong");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchWeather();
+    }
+  }, [randomCity]);
+
+  const getBackgroundColorForWeather = (condition) => {
+    const lowerCaseCondition = condition.toLowerCase();
+  
+    switch (true) {
+      case lowerCaseCondition.includes("sunny") || lowerCaseCondition.includes("clear"):
+        return "linear-gradient(to bottom, #87CEEB, #ADD8E6)";
+  
+      case lowerCaseCondition.includes("cloudy") || lowerCaseCondition.includes("overcast"):
+        return "linear-gradient(to bottom, #2F4F4F, #B0B0B0)";
+  
+      case lowerCaseCondition.includes("rainy") || lowerCaseCondition.includes("showers") || lowerCaseCondition.includes("patchy") || lowerCaseCondition.includes("patchy rain nearby"):
+        return "linear-gradient(to bottom, #2F4F4F, #1E90FF)";
+  
+      case lowerCaseCondition.includes("snow"):
+        return "linear-gradient(to bottom, #2F4F4F, #FFFFFF)";
+  
+      default:
+        return "linear-gradient(to bottom, #F5F5F5, #F5F5F5)";
+    }
+  };
+  
+
+  useEffect(() => {
+    getRandomCity();
+  }, []);
 
   const handleSubmit = (e) => {
-    e.preventDefault(); // prevent page reload
+    e.preventDefault();
     if (search.trim()) {
       router.push(`/results?city=${encodeURIComponent(search.trim())}`);
     }
-  };  
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-200 to-blue-600">
+    <div className="min-h-screen" style={{ background: backgroundColor }}>
       <main>
         <div className="bg-white p-6 flex">
           <div className="flex gap-2 flex-1/2">
@@ -35,7 +103,7 @@ export default function Home() {
             </h1>
           </div>
 
-          <div className="w-full">
+          <div className="w-full flex justify-center items-center">
             <div className="mx-auto">
               <form className="flex items-center" onSubmit={handleSubmit}>
                 <label htmlFor="simple-search" className="sr-only">
@@ -61,7 +129,7 @@ export default function Home() {
                     id="simple-search"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-96 pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     placeholder="Search"
                     required
                   />
@@ -88,19 +156,31 @@ export default function Home() {
               </form>
             </div>
           </div>
+        </div>
 
-          <div className="flex flex-1 ml-10 mt-3 gap-10">
-            <div
-              className={`${headerFont.className} font-semibold text-black text-xl`}
-            >
-              Home
-            </div>
-            <div
-              className={`${headerFont.className} font-semibold text-black text-xl`}
-            >
-              About
-            </div>
-          </div>
+        {/* Display the randomly chosen city's name */}
+        <div className="flex justify-center mt-10">
+          {loading && <p>Loading forecast...</p>}
+          {error && <p className="text-red-600">{error}</p>}
+          {!loading && !error && randomCity && (
+            <h2 className="text-2xl font-semibold text-center mt-4">
+              7-Day Forecast for {randomCity}
+            </h2>
+          )}
+        </div>
+
+        {/* Forecast Cards for the random city */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 justify-center mt-6">
+          {forecast.length > 0 &&
+            forecast.map((day) => (
+              <ForecastCard
+                key={day.date}
+                date={day.date}
+                temp={day.day.avgtemp_c}
+                conditionText={day.day.condition.text}
+                iconUrl={`https:${day.day.condition.icon}`}
+              />
+            ))}
         </div>
       </main>
     </div>

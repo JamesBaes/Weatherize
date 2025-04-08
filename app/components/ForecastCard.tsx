@@ -6,7 +6,7 @@ export default function ForecastCard({ date, temp, conditionText, iconUrl }) {
         <p className="font-semibold">{date}</p>
         <img src={iconUrl} alt={conditionText} />
         <p className="text-lg">{temp}°C</p>
-        <p className="text-gray-600">{conditionText}</p>
+        <p className="text-white-600">{conditionText}</p>
       </div>
     );
   }
