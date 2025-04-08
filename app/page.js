@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import ForecastCard from "../app/components/ForecastCard";
 import { getWeatherData } from "../app/utils/fetchWeather";
-import { headerFont } from "./layout.js";
+import { headerFont } from "../app/fonts";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
